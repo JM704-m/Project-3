@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Daily Vent Screen</title>
+    <!-- Using your local p5.js library -->
+    <script src="lib/p5.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Screen Management */
+        .screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Common UI Elements */
+        h1, h2 {
+            font-weight: normal;
+            letter-spacing: 2px;
+        }
+        .btn {
+            background: #000;
+            color: #fff;
+            border: 2px solid #fff;
+            padding: 12px 40px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+        .btn:hover {
+            background: #fff;
+            color: #000;
+        }
+
+        /* 1. Download Screen */
+        #screen-download h1 {
+            margin-bottom: 80px;
+            font-size: 32px;
+        }
+
+        /* 2. Downloading Animation Screen */
+        .arrow-down {
+            width: 0; 
+            height: 0; 
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 25px solid #fff;
+            margin-bottom: 20px;
+        }
+        #flash-container {
+            border: 2px solid #fff;
+            padding: 15px 40px;
+            margin-bottom: 40px;
+            width: 350px;
+            text-align: center;
+        }
+        #flash-text {
+            font-size: 18px;
+            letter-spacing: 1px;
+        }
+        #progress-wrapper {
+            display: flex;
+            align-items: center;
+            width: 350px;
+        }
+        #progress-bar {
+            flex-grow: 1;
+            height: 3px;
+            background: #333;
+            position: relative;
+        }
+        #progress-fill {
+            height: 100%;
+            width: 0%;
+            background: #fff;
+            box-shadow: 0 0 10px #fff;
+            transition: width 0.1s linear;
+        }
+        #progress-pct {
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        /* 4. Main App Split Screen */
+        #screen-main {
+            flex-direction: row;
+        }
+        #left-panel {
+            width: 35%;
+            height: 100%;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+        }
+        #right-panel-wrapper {
+            width: 65%;
+            height: 100%;
+            padding: 40px 40px 40px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* The border box simulating the Times Square screen */
+        #right-panel {
+            width: 100%;
+            height: 100%;
+            border: 3px solid #fff;
+            position: relative;
+            overflow: hidden; 
+        }
+        /* Force canvas to behave properly inside the div */
+        #right-panel canvas {
+            display: block;
+        }
+
+        /* Left Panel Forms */
+        #left-panel h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            font-size: 14px;
+            color: #aaa;
+            margin-bottom: 40px;
+        }
+        textarea {
+            background: #000;
+            color: #fff;
+            border: 2px solid #fff;
+            padding: 15px;
+            font-size: 16px;
+            height: 120px;
+            resize: none;
+            margin-bottom: 20px;
+            font-family: inherit;
+        }
+        textarea:focus {
+            outline: none;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+        }
+        .file-upload-btn {
+            border: 2px solid #fff;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 20px;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+        .file-upload-btn:hover {
+            background: #222;
+        }
+        #preview-container {
+            display: none;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+            padding: 5px;
+        }
+        #preview-img {
+            max-width: 100%;
+            max-height: 150px;
+            display: block;
+            margin: 0 auto;
+        }
+        .cast-btn {
+            margin-top: auto;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. Download Page -->
+    <div id="screen-download" class="screen active">
+        <h1>The Daily Vent Screen</h1>
+        <button class="btn" onclick="startDownload()">Download</button>
+    </div>
+
+    <!-- 2. Downloading Animation Page -->
+    <div id="screen-downloading" class="screen">
+        <div class="arrow-down"></div>
+        <div id="flash-container">
+            <div id="flash-text">Download</div>
+        </div>
+        <div id="progress-wrapper">
+            <div id="progress-bar"><div id="progress-fill"></div></div>
+        </div>
+        <div id="progress-pct">Downloaded 0%</div>
+    </div>
+
+    <!-- 3. Login Page -->
+    <div id="screen-login" class="screen">
+        <button class="btn" onclick="enterApp()">Login</button>
+    </div>
+
+    <!-- 4. Main App Interface -->
+    <div id="screen-main" class="screen">
+        <!-- User Input Side -->
+        <div id="left-panel">
+            <h2>UPLOAD</h2>
+            <p class="subtitle">Inject your transient thoughts into the grid.</p>
+            
+            <textarea id="user-text" placeholder="(Type your thought here...)"></textarea>
+            
+            <label class="file-upload-btn">
+                + Attach Image
+                <input type="file" id="user-image" accept="image/*" style="display: none;" onchange="previewImage(event)">
+            </label>
+            
+            <div id="preview-container">
+                <img id="preview-img" src="">
+            </div>
+
+            <button class="btn cast-btn" onclick="castToScreen()">Cast</button>
+        </div>
+        
+        <!-- Times Square Simulation Side -->
+        <div id="right-panel-wrapper">
+            <div id="right-panel">
+                <!-- p5.js Canvas will be injected here automatically -->
+            </div>
+        </div>
+    </div>
+
+    <script src="sketch.js"></script>
+</body>
+</html>
